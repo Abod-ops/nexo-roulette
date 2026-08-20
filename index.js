@@ -20,9 +20,13 @@ const client = new Client({
 });
 
 // ── Ready Event ───────────────────────────────────────────────────────────────
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
   console.log(`✅ NEXO Roulette is online as ${client.user.tag}`);
   startHealthServer();
+  
+  // Deploy Slash Commands
+  const { deployCommands } = require('./src/deployCommands');
+  await deployCommands(client.user.id, process.env.TOKEN);
 });
 
 // ── Message Command Handler ───────────────────────────────────────────────────
@@ -62,10 +66,35 @@ client.on(Events.MessageBulkDelete, async (messages) => {
 });
 
 // ── Interaction Router ────────────────────────────────────────────────────────
-// All buttons/selects are routed to the GameSession for their channel.
+// Global interactions (e.g. from -متجر) are handled first.
+// Session interactions (buttons/selects in game) are routed to GameSession.
 client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
   if (!interaction.guild) return;
+
+  if (interaction.isChatInputCommand()) {
+    try {
+      const { handleGlobalSlashCommands } = require('./src/commands/globalCommands');
+      const { handleSlashCommand: handleRouletteSlash } = require('./src/commands/roulette');
+      
+      const isGlobal = await handleGlobalSlashCommands(client, interaction);
+      if (!isGlobal) {
+        await handleRouletteSlash(client, interaction);
+      }
+    } catch (err) {
+      console.error('[interactionCreate] Slash command error:', err);
+    }
+    return;
+  }
+
+  if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
+
+  const { handleGlobalInteractions } = require('./src/commands/globalCommands');
+  try {
+    const isGlobal = await handleGlobalInteractions(client, interaction);
+    if (isGlobal) return;
+  } catch (err) {
+    console.error('[interactionCreate] Global handler error:', err);
+  }
 
   const session = getSession(interaction.channelId);
   if (!session) {

@@ -79,4 +79,54 @@ async function handleMessage(client, message) {
   }
 }
 
-module.exports = { handleMessage };
+async function handleSlashCommand(client, interaction) {
+  if (interaction.commandName !== 'roulette') return;
+
+  const channel = interaction.channel;
+  const channelId = channel.id;
+  const guild = interaction.guild;
+  const member = interaction.member;
+
+  if (hasSession(channelId)) {
+    await interaction.reply({
+      content: '⚠️ هناك لعبة جارية بالفعل في هذه القناة! انتظر انتهاءها.',
+      ephemeral: true
+    }).catch(() => {});
+    return;
+  }
+
+  let fullMember = member;
+  if (!fullMember) {
+    fullMember = await guild.members.fetch(interaction.user.id).catch(() => null);
+  }
+  if (!fullMember) {
+    await interaction.reply({ content: '❌ تعذر جلب بياناتك.', ephemeral: true }).catch(() => {});
+    return;
+  }
+
+  if (!hasAllowedRole(fullMember)) {
+    await interaction.reply({
+      content: '❌ ما تقدر تبدأ الروليت! هذا الأمر متاح فقط لأصحاب رول **Games** أو **Staff**.',
+      ephemeral: true
+    }).catch(() => {});
+    return;
+  }
+
+  // Acknowledge the interaction so it doesn't timeout while GameSession starts
+  await interaction.deferReply().catch(() => {});
+
+  const session = new GameSession(channel, fullMember);
+  setSession(channelId, session);
+
+  try {
+    // Delete the deferred reply so it doesn't clutter the chat
+    await interaction.deleteReply().catch(() => {});
+    await session.startLobby();
+  } catch (err) {
+    console.error('[roulette slash command] Session error:', err);
+    session.destroy();
+    await interaction.channel.send({ content: '❌ حدث خطأ غير متوقع. تم إلغاء الجلسة.' }).catch(() => {});
+  }
+}
+
+module.exports = { handleMessage, handleSlashCommand };

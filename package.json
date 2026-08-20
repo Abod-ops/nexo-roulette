@@ -1,0 +1,26 @@
+{
+  "name": "nexo-roulette",
+  "version": "1.0.0",
+  "description": "NEXO Roulette - Discord bot for social elimination roulette game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "roulette",
+    "nexo",
+    "arabic"
+  ],
+  "author": "NEXO",
+  "license": "ISC",
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.65",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "gifenc": "^1.0.3"
+  }
+}

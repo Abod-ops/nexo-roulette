@@ -1,0 +1,20 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+
+# Database files
+*.sqlite binary
+*.db binary
+*.json text
